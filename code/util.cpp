@@ -9,6 +9,11 @@ void init_f(const char *str) {
   ev3_lcd_draw_string(str, 0, 0);
 }
 
+void sound(uint16_t frequency,int32_t duration){
+  ev3_speaker_set_volume(100);
+  ev3_speaker_play_tone(frequency,duration);
+}
+
 /**
  * 行単位で引数の文字列を表示
  * @param str 表示する文字列
