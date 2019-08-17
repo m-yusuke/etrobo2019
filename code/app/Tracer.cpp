@@ -1,5 +1,6 @@
 #include "Tracer.h"
 
+
 Tracer::Tracer():
   leftWheel(PORT_C), rightWheel(PORT_B),
   colorSensor(PORT_2),armWheel(PORT_D),
@@ -8,7 +9,24 @@ Tracer::Tracer():
 
 void Tracer::init() {
   init_f("Tracer");
+  // calibration();
   initArm();
+}
+
+void Tracer::LorR() {
+  while(1){
+    if(ev3_button_is_pressed(LEFT_BUTTON)){
+      msg_f("Run LEFT", 2);
+      lr = true;
+    }else if(ev3_button_is_pressed(RIGHT_BUTTON)){
+      msg_f("Run RIGHT", 3);
+      lr = false;
+    }
+    if(ev3_button_is_pressed(ENTER_BUTTON)) {
+      break;
+    }
+    clock.wait(4);
+  }
 }
 
 void Tracer::initArm() { // アームの位置の初期化
@@ -19,25 +37,28 @@ void Tracer::initArm() { // アームの位置の初期化
   }
   armWheel.reset();
   // アームの位置を設定する
-  while( armWheel.getCount() < 35) {
+  while( armWheel.getCount() < 32) {
     armWheel.setPWM(5);
   }
   armWheel.stop();
 }
 
 void Tracer::calibration() {
+  msg_clear();
   while(1){
     if(ev3_button_is_pressed(LEFT_BUTTON)){
       msg_f("Black Value", 2);
       blackValue = colorSensor.getBrightness();
+      sound(NOTE_DS6,500);
       msg_f(blackValue, 3);
     }else if(ev3_button_is_pressed(RIGHT_BUTTON)){
       msg_f("White Value", 4);
       whiteValue = colorSensor.getBrightness();
+      sound(NOTE_DS6,500);
       msg_f(whiteValue, 5);
     }
     if(ev3_button_is_pressed(ENTER_BUTTON)) {
-      mThreshold = (blackValue + whiteValue) / 2;
+      target_y = (blackValue + whiteValue) / 2;
       msg_f("Waiting for start", 1);
       break;
     }
@@ -53,7 +74,7 @@ void Tracer::terminate() {
 }
 
 float Tracer::calc_prop_value() {
-  const float Kp = 0.83;
+  const float Kp = 1.0;//0.98;
   const int target = 10;
   const int bias = 0;
 
@@ -79,7 +100,18 @@ float Tracer::calc_pid() {
 *******************************/
 void Tracer::touchStart() {
   if(touchSensor.isPressed()) isTouch = true;
-  if(isTouch) run();
+  // if(isTouch) run();
+  if(isTouch) {
+    KP = 0.65;
+    vec_run(23,7000);
+    KP = 0.98;
+    vec_run(20,21000);
+    KP = 0.38;
+    vec_run(25,3700);
+    KP = 0.98;
+    vec_run(20,15100);
+    terminate();
+   }
 }
 
 /*******************************
@@ -87,9 +119,30 @@ void Tracer::touchStart() {
 *******************************/
 void Tracer::run() {
   msg_f("running...", 1);
-  float turn = calc_pid();//calc_prop_value();
-  int pwm_l = pwm - turn;
-  int pwm_r = pwm + turn;
+  float turn = calc_prop_value();// calc_pid();
+  int pwm_l, pwm_r;
+  if(lr) { // 左コース
+    pwm_l = pwm + turn;
+    pwm_r = pwm - turn;
+  }else{ // 右コース
+    pwm_l = pwm - turn;
+    pwm_r = pwm + turn;
+  }
   leftWheel.setPWM(pwm_l);
   rightWheel.setPWM(pwm_r);
+}
+
+/*******************************************************************************
+ * ライントレース - 指定距離走行する。   vec_pwm = 速度(0~100) , time = 走行時間(msec) *
+********************************************************************************/
+void Tracer::vec_run(int8_t vec_pwm, uint32_t time) {
+  clock.reset();
+  while(1){
+    if(clock.now() >= time) break;
+    float turn = calc_pid();// calc_prop_value();
+    int pwm_l = vec_pwm - turn;
+    int pwm_r = vec_pwm + turn;
+    leftWheel.setPWM(pwm_l);
+    rightWheel.setPWM(pwm_r);
+  }
 }

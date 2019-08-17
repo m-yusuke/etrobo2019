@@ -15,6 +15,10 @@ public:
   void terminate();
   void initArm();
   void calibration();
+  void LorR();
+  void vec_run(int8_t vec_pwm, uint32_t time);
+
+  bool lr;
 
 private:
   Motor leftWheel;
@@ -23,8 +27,8 @@ private:
   ColorSensor colorSensor;
   TouchSensor touchSensor;
   Clock clock;
-  int8_t mThreshold = 20;
-  const int8_t pwm = (Motor::PWM_MAX) / 5;
+  int8_t mThreshold = 0; // つかってなーーーい。
+  const int8_t pwm = 16; // (Motor::PWM_MAX) / 6;
 
   bool isTouch = false;
 
@@ -33,11 +37,11 @@ private:
   int8_t whiteValue = 0;
 
   /* pid 制御で使用する変数たち */
-  const int target_y = 10;
+  int target_y = 12;
   const int bias_y = 0;
   const float DELTA_T = 0.004;
-  const float KP = 0.83;
-  const float KI = 0;
+  float KP = 0.83;
+  const float KI = 0.0;
   const float KD = 0.2;
   float intergral = 0;
   int oldDiff = 0;
