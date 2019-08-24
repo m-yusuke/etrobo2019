@@ -102,27 +102,31 @@ void Tracer::touchStart() {
   if(touchSensor.isPressed()) isTouch = true;
   // if(isTouch) run();
   if(isTouch) {
-    KP = 0.30;
-    vec_run(30,1400);
+    KP = 0.60;
+    vec_run(30,2450);
     sound(NOTE_DS6,200);
-    KP = 0.99;
-    vec_run(24,1600);
+    KP = 1.1;
+    vec_run(25,2000);
     sound(NOTE_DS6,200);
-   // KP = 0.99;
-    KP =1.2;
-    vec_run(25.5,13000);
+     KP = 0.6;
+    vec_run(30,2200);
     sound(NOTE_DS6,200);
-  KP = 0.99;
-    vec_run(26,6000);
+   //KP = 0.99;//R用
+    //KP =1.2;//L用
+    KP=1.1;
+    vec_run(25,6000);
+    sound(NOTE_DS6,200);
+  KP = 0.8;
+    vec_run(27,4000);
     sound(NOTE_DS5,200);
-    KP = 0.9;
-    vec_run(28,2700);
+    KP = 0.8;
+    vec_run(28,6000);
     sound(NOTE_DS5,200);
-    KP = 0.99;
+    KP = 0.7;
     vec_run(26.5,4000);
     sound(NOTE_DS5,200);
-    KP = 0.99;
-    vec_run(24,7400);
+    KP = 1.1;
+    vec_run(25.5,7900);
     sound(NOTE_DS5,200);
     KP = 0.6;
     vec_run(30,2000);
@@ -139,11 +143,14 @@ void Tracer::run() {
   int pwm_l, pwm_r;
   if(lr) { // 左コース
     pwm_l = pwm + turn;//正しい
+   // pwm_l = pwm - turn;
     pwm_r = pwm - turn;//正しい
+    //pwm_r = pwm + turn;
   }else{ // 右コース
     pwm_l = pwm - turn;
     pwm_r = pwm + turn;
   }
+   // rightWheel.setPWM(pwm_r);
   leftWheel.setPWM(pwm_l);
   rightWheel.setPWM(pwm_r);
 }
@@ -156,10 +163,10 @@ void Tracer::vec_run(int8_t vec_pwm, uint32_t time) {
   while(1){
     if(clock.now() >= time) break;
     float turn = calc_pid();// calc_prop_value();
-    //int pwm_l = vec_pwm - turn;//Rコース用
-    int pwm_l = vec_pwm + turn;//Lコース用
-   // int pwm_r = vec_pwm + turn;//Rコース用
-   int pwm_r = vec_pwm - turn;//Lコース用
+   // int pwm_l = vec_pwm - turn;//R
+    int pwm_l = vec_pwm + turn;//L
+ // int pwm_r = vec_pwm + turn;//R
+  int pwm_r = vec_pwm - turn;//L
     leftWheel.setPWM(pwm_l);
     rightWheel.setPWM(pwm_r);
   }
