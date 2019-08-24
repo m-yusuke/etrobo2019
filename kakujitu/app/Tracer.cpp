@@ -10,8 +10,8 @@ Tracer::Tracer():
 void Tracer::init() {
   init_f("Tracer");
   //calibration();
-  initArm();
   LorR();
+  initArm();
 }
 
 void Tracer::LorR() {
@@ -24,6 +24,7 @@ void Tracer::LorR() {
       lr = true;
     }
     if(ev3_button_is_pressed(ENTER_BUTTON)) {
+    
       break;
     }
     clock.wait(4);
@@ -103,34 +104,9 @@ void Tracer::touchStart() {
   if(touchSensor.isPressed()) isTouch = true;
   // if(isTouch) run();
   if(isTouch) {
-    KP = 0.60;
-    vec_run(30,2450);
-    sound(NOTE_DS6,200);
     KP = 1.1;
-    vec_run(25,2000);
-    sound(NOTE_DS6,200);
-     KP = 0.6;
-    vec_run(30,2200);
-    sound(NOTE_DS6,200);
-   //KP = 0.99;//R用
-    //KP =1.2;//L用
-    KP=1.1;
-    vec_run(25,6000);
-    sound(NOTE_DS6,200);
-  KP = 0.8;
-    vec_run(27,4000);
+    vec_run(25.5,40000);
     sound(NOTE_DS5,200);
-    KP = 0.8;
-    vec_run(28,6000);
-    sound(NOTE_DS5,200);
-    KP = 0.7;
-    vec_run(26.5,4000);
-    sound(NOTE_DS5,200);
-    KP = 1.1;
-    vec_run(25.5,8200);
-    sound(NOTE_DS5,200);
-    KP = 0.6;
-    vec_run(30,2000);
     terminate();
    }
 }
@@ -164,9 +140,9 @@ void Tracer::vec_run(int8_t vec_pwm, uint32_t time) {
   while(1){
     if(clock.now() >= time) break;
     float turn = calc_pid();// calc_prop_value();
-       int pwm_l ;
+    int pwm_l ;
     int pwm_r ;
-     if(lr) {
+    if(lr) {
     pwm_l = vec_pwm - turn;//R
     pwm_r = vec_pwm + turn;//R
     }else{
