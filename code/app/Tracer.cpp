@@ -3,16 +3,19 @@
 
 Tracer::Tracer():
   leftWheel(PORT_C), rightWheel(PORT_B),
-  colorSensor(PORT_2),armWheel(PORT_D),
-  touchSensor(PORT_1){
+  colorSensor(PORT_2),
+  touchSensor(PORT_1),steering(leftWheel,rightWheel){
 }
 
 void Tracer::init() {
   init_f("Tracer");
   // calibration();
-  initArm();
 }
 
+/*************
+ * 動作
+ * ・LコースかRコースの選択
+ * ***********/
 void Tracer::LorR() {
   while(1){
     if(ev3_button_is_pressed(LEFT_BUTTON)){
@@ -29,20 +32,10 @@ void Tracer::LorR() {
   }
 }
 
-void Tracer::initArm() { // アームの位置の初期化
-  uint32_t b_time = clock.now();
-  // アームを一度下げる
-  while( (clock.now()-b_time) < 600 ) {
-    armWheel.setPWM(-25);
-  }
-  armWheel.reset();
-  // アームの位置を設定する
-  while( armWheel.getCount() < 32) {
-    armWheel.setPWM(5);
-  }
-  armWheel.stop();
-}
-
+/**********************
+ * 動作
+ * ・キャリブレーション
+ * ********************/
 void Tracer::calibration() {
   msg_clear();
   while(1){
@@ -66,6 +59,10 @@ void Tracer::calibration() {
   }
 }
 
+/**********************
+ * 動作
+ * ・ストップする。
+ * ********************/
 void Tracer::terminate() {
   msg_f("Stopped.", 1);
   isTouch = false;
@@ -73,16 +70,10 @@ void Tracer::terminate() {
   rightWheel.stop();
 }
 
-float Tracer::calc_prop_value() {
-  const float Kp = 1.0;//0.98;
-  const int target = 10;
-  const int bias = 0;
-
-  int diff = colorSensor.getBrightness() - target;
-  return (Kp * diff + bias);
-}
-
-// PID制御 - 制御が強すぎる？ 試走会で
+/**********************
+ * 動作
+ * ・pid計算部分 time_runで使用。
+ * ********************/
 float Tracer::calc_pid() {
   int diff = colorSensor.getBrightness() - target_y;
   intergral += (diff + oldDiff) / 2.0 * DELTA_T;
@@ -95,36 +86,31 @@ float Tracer::calc_pid() {
   return p+i+d;
 }
 
-/*******************************
- * タッチスタート - 走行開始      *
-*******************************/
-void Tracer::touchStart() {
-  if(touchSensor.isPressed()) isTouch = true;
-  // if(isTouch) run();
-  if(isTouch) {
-    KP = 0.65;
-    vec_run(23,7000);
-    KP = 0.98;
-    vec_run(20,21000);
-    KP = 0.38;
-    vec_run(25,3700);
-    KP = 0.98;
-    vec_run(20,15100);
-    terminate();
-   }
+/*********************
+ * 動作
+ * ・pid計算部分 runで使用。
+ * *******************/
+float Tracer::calc_prop_value() {
+  const float Kp = 0.85;        // <1>
+  const int target = 12;        // <2>
+  const int bias = 0;
+
+  int diff = colorSensor.getBrightness() - target; // <3>
+  return (Kp * diff + bias);                       // <4>
 }
 
 /*******************************
- * ライントレース - 走行する      *
-*******************************/
+ * 動作
+ * ・ライントレース - 通常走行
+ * ******************************/
 void Tracer::run() {
   msg_f("running...", 1);
-  float turn = calc_prop_value();// calc_pid();
+  float turn = calc_prop_value();
   int pwm_l, pwm_r;
   if(lr) { // 左コース
     pwm_l = pwm + turn;
     pwm_r = pwm - turn;
-  }else{ // 右コース
+  }else { // 右コース
     pwm_l = pwm - turn;
     pwm_r = pwm + turn;
   }
@@ -133,16 +119,108 @@ void Tracer::run() {
 }
 
 /*******************************************************************************
- * ライントレース - 指定距離走行する。   vec_pwm = 速度(0~100) , time = 走行時間(msec) *
-********************************************************************************/
-void Tracer::vec_run(int8_t vec_pwm, uint32_t time) {
+ * 動作
+ * ・ライントレース - 指定時間走行
+ * 引数
+ * ・int8_t time_pwm = 速度(0~100)
+ * ・uint32_t time = 走行時間(msec) 1秒 = 1000
+ * *****************************************************************************/
+void Tracer::time_run(int8_t time_pwm, uint32_t time) {
   clock.reset();
   while(1){
     if(clock.now() >= time) break;
-    float turn = calc_pid();// calc_prop_value();
-    int pwm_l = vec_pwm - turn;
-    int pwm_r = vec_pwm + turn;
+    float turn = calc_pid();
+    int pwm_l = time_pwm - turn; // time_pwm + turn
+    int pwm_r = time_pwm + turn; // time_pwm - turn
     leftWheel.setPWM(pwm_l);
     rightWheel.setPWM(pwm_r);
+  }
+}
+
+/**************************************************************
+ * 動作
+ * ・ターンする(前進, 後進あり)。 
+ * 引数 
+ * ・int speed:モータの速度
+ * ・int32_t angle:モータの各位置, 268 - 45度, 536 - 180度, 1072 - 360度
+ * ・char direction:走行パターン。 l 左回転, r 右回転, f 前進, b 後進 
+ * *************************************************************/
+void Tracer::turn(int speed, int32_t angle, char direction) {
+  switch (direction)
+  {
+  case 'l': // Left turn
+    leftWheel.reset();
+    while(1) {
+      if(leftWheel.getCount() >= angle) break;
+      steering.setPower(speed,50);
+    }
+    break;
+  
+  case 'r': // Right turn
+    rightWheel.reset();
+    while(1) {
+      if(rightWheel.getCount() >= angle) break;
+      steering.setPower(speed,-50);
+    }
+    break;
+
+  case 'f': // Forward
+    leftWheel.reset();
+    rightWheel.reset();
+    while(1) {
+      if(leftWheel.getCount() >= angle && rightWheel.getCount() >= angle) break;
+      steering.setPower(speed,0);
+    }
+    break;
+
+  case 'b': // Back
+    leftWheel.reset();
+    rightWheel.reset();
+    while(1) {
+      if(leftWheel.getCount() <= -angle && rightWheel.getCount() <= -angle) break;
+      steering.setPower(-speed,0);
+    }
+    break;
+  }
+}
+
+/***********************
+ * 動作
+ * ・トレースしないで動く。
+ * 引数
+ * ・int speed:モータの速度
+ * ・char direction:走行パターン。 l 左回転, r 右回転, f 前進, b 後進
+ * *********************/
+void Tracer::move(int speed, char direction){
+  switch (direction)
+  {
+  case 'l': // Left turn
+    steering.setPower(speed,100);
+    break;
+  
+  case 'r': // Right turn
+    steering.setPower(speed,-100);
+    break;
+
+  case 'f': // Foward
+    steering.setPower(speed,0);
+    break;
+  
+  case 'b': // Back
+    steering.setPower(-speed,0);
+    break;
+  }
+}
+
+/****************************
+ * 動作
+ * ・0.5秒その場で一時停止する。
+ * **************************/
+void Tracer::pause(){
+  clock.reset();
+  while(1) {
+    if(clock.now() >= 500) break;
+      leftWheel.stop();
+      rightWheel.stop();
   }
 }

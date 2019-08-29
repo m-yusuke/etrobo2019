@@ -4,7 +4,9 @@ APPL_COBJS +=
 
 APPL_CXXOBJS += \
 util.o \
-Tracer.o
+Tracer.o \
+Block.o \
+Manager.o
 
 SRCLANG := c++
 

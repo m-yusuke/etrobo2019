@@ -3,6 +3,7 @@
 #include "TouchSensor.h"
 #include "util.h"
 #include "Clock.h"
+#include "Steering.h"
 
 using namespace ev3api;
 
@@ -16,21 +17,24 @@ public:
   void initArm();
   void calibration();
   void LorR();
-  void vec_run(int8_t vec_pwm, uint32_t time);
+  void time_run(int8_t time_pwm, uint32_t time);
+  void turn(int speed, int32_t angle, char direction);
+  void move(int speed, char direction);
+  void pause();
 
-  bool lr;
+  bool lr = false;
+  bool isTouch = false;
+  float KP = 0.83;
 
 private:
   Motor leftWheel;
   Motor rightWheel;
-  Motor armWheel;
   ColorSensor colorSensor;
   TouchSensor touchSensor;
   Clock clock;
-  int8_t mThreshold = 0; // つかってなーーーい。
-  const int8_t pwm = 16; // (Motor::PWM_MAX) / 6;
+  Steering steering;
+  const int8_t pwm = 16;
 
-  bool isTouch = false;
 
   /* キャリブレーションで使用する変数たち */
   int8_t blackValue = 0;
@@ -40,13 +44,12 @@ private:
   int target_y = 12;
   const int bias_y = 0;
   const float DELTA_T = 0.004;
-  float KP = 0.83;
   const float KI = 0.0;
   const float KD = 0.2;
   float intergral = 0;
   int oldDiff = 0;
 
-  float calc_prop_value();
   float calc_pid();
+  float calc_prop_value();
 };
 // end::tracer_h_private[]
