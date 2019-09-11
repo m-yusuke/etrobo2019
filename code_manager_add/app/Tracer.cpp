@@ -137,8 +137,8 @@ void Tracer::time_run(int8_t time_pwm, uint32_t time) {
      pwm_l = time_pwm + turn; // time_pwm + turn
      pwm_r = time_pwm - turn; // time_pwm - turn
     }else{
-    pwm_r = time_pwm - turn;//L
-    pwm_l = time_pwm + turn;//L
+    pwm_r = time_pwm + turn;//L
+    pwm_l = time_pwm - turn;//L
     }
     leftWheel.setPWM(pwm_l);
     rightWheel.setPWM(pwm_r);

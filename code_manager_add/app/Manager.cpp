@@ -31,10 +31,39 @@ void Manager::touchStart() {
 }
 
 void Manager::lineTracer() {
+    //tracer.KP = 0.6;
+    //tracer.time_run(30,2000);
+    //tracer.KP = 1.1;
+    //sound(NOTE_DS5,200);
+    //tracer.time_run(26,2500);
+    //tracer.KP = 0.6;    
+    //sound(NOTE_DS5,200);
+    //tracer.time_run(26,3000);
+    //tracer.KP = 1.1;
+    //tracer.time_run(26,2000);
+    //sound(NOTE_DS5,200);
+     //tracer.KP = 1.2;
+    //tracer.time_run(26,3000);
+     //sound(NOTE_DS5,200);
+    //tracer.KP = 1.0;
+    //tracer.time_run(28,8000);
+    //sound(NOTE_DS5,200);
+    //tracer.KP = 0.6;
+    //tracer.time_run(28,14000);
+    
+    tracer.KP = 1.0;
+    tracer.time_run(25.5,8000);
+    sound(NOTE_DS5,200);
     tracer.KP = 1.1;
-    tracer.time_run(24,34000);
+    tracer.time_run(25.5,20000);
+    sound(NOTE_DS5,200);
+    tracer.KP = 1.20;
+    tracer.time_run(25,4000);
+    
+    //tracer.KP = 1.1;
+    //tracer.time_run(24,34000);
     tracer.KP = 1.40;
-    tracer.time_run(24,9000);
+    tracer.time_run(24,4000);
 }
 
 void Manager::leftJig() {
