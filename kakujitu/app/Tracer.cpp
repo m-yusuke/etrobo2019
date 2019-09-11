@@ -105,8 +105,10 @@ void Tracer::touchStart() {
   // if(isTouch) run();
   if(isTouch) {
     KP = 1.1;
-    vec_run(25.5,40000);
-    sound(NOTE_DS5,200);
+    vec_run(24,34000);
+    KP = 1.4;
+    vec_run(24,18000);
+ sound(NOTE_DS5,200);
     terminate();
    }
 }
