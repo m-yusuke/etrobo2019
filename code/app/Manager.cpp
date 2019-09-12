@@ -19,12 +19,13 @@ void Manager::touchStart() {
   if(tracer.isTouch) {
     //lineTracer();
     bool isColor = block.colorStop();
+    tracer.goEndPoint();
     if(!isColor){
-        tracer.run();
+        //tracer.run();
     }
     else{
-        if(tracer.lr) leftJig();
-        else rightJig();
+        //if(tracer.lr) leftJig();
+        //else rightJig();
     }
   }
 }

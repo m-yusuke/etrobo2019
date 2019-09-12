@@ -16,6 +16,8 @@ public:
   void leftJig();
   void rightJig();
   void lineTracer();
+  //void moveParking();
+  const int8_t pwm = (Motor::PWM_MAX) / 6;
 
 private:
   TouchSensor touchSensor;

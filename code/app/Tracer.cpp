@@ -75,15 +75,21 @@ void Tracer::terminate() {
  * ・pid計算部分 time_runで使用。
  * ********************/
 float Tracer::calc_pid() {
-  int diff = colorSensor.getBrightness() - target_y;
+  oldDiff = diff;
+  diff = colorSensor.getBrightness() - target_y;
   intergral += (diff + oldDiff) / 2.0 * DELTA_T;
 
   float p = KP * diff + bias_y;
   float i = KI * intergral;
   float d = KD * (diff - oldDiff) / DELTA_T;
 
-  oldDiff = diff;
-  return p+i+d;
+  float result = p+i+d;
+  if (result < -100.0){
+    result = -100.0;
+  }else if (result > 100.0){
+    result = 100.0;
+  }
+  return result;
 }
 
 /*********************
@@ -105,7 +111,8 @@ float Tracer::calc_prop_value() {
  * ******************************/
 void Tracer::run() {
   msg_f("running...", 1);
-  float turn = calc_prop_value();
+  //float turn = calc_prop_value();
+  float turn = calc_pid();
   int pwm_l, pwm_r;
   if(lr) { // 左コース
     pwm_l = pwm + turn;
@@ -223,4 +230,98 @@ void Tracer::pause(){
       leftWheel.stop();
       rightWheel.stop();
   }
+}
+
+/***********************
+ * 動作
+ * ・首を振ってラインを探す。
+ * 引数
+ * ・int tiny_speed:モータの速度
+ * ・int tiny_angle:首を振る角度を指定。
+ * *********************/
+bool Tracer::searchLine(int tiny_speed, int tiny_angle){
+      bool isEnd = true;
+      int color = 0;
+      leftWheel.reset();
+      rightWheel.reset();
+      while(1) {
+          color = colorSensor.getColorNumber();
+          if(color == 0 || color == 1) isEnd = false;
+          if(leftWheel.getCount() <= (-1 * tiny_angle / 2) && rightWheel.getCount() >= tiny_angle / 2) break;
+          leftWheel.setPWM(-1 * tiny_speed);
+          rightWheel.setPWM(tiny_speed);
+      }
+      leftWheel.reset();
+      rightWheel.reset();
+      while(1) {
+          color = colorSensor.getColorNumber();
+          if(color == 0 || color == 1) isEnd = false;
+          if(leftWheel.getCount() >= tiny_angle && rightWheel.getCount() <= (-1 * tiny_angle)) break;
+          leftWheel.setPWM(tiny_speed);
+          rightWheel.setPWM(-1 * tiny_speed);
+      }
+      leftWheel.reset();
+      rightWheel.reset();
+      while(1) {
+          color = colorSensor.getColorNumber();
+          if(color == 0 || color == 1) isEnd = false;
+          if(leftWheel.getCount() <= (-1 * tiny_angle / 2) && rightWheel.getCount() >= tiny_angle / 2) break;
+          leftWheel.setPWM(-1 * tiny_speed);
+          rightWheel.setPWM(tiny_speed);
+      }
+      if (isEnd) sound(NOTE_D6,500);
+      return isEnd;
+}
+
+/****************************
+ * 動作
+ * ・ラインを探しながら進んでいく。
+ * ラインがない場合は反転。
+ * **************************/
+void Tracer::goEndPoint() {
+    int speed = 10;
+    int tiny_speed = 5;
+    int32_t angle = 275;
+    int32_t tiny_angle = 34;
+    int32_t forward_angle = 110;
+    bool end = true;
+    int color = 0;
+    while(1){
+        end = true;
+        leftWheel.reset();
+        rightWheel.reset();
+        while(1) {
+            run();
+            color = colorSensor.getColorNumber();
+            if(color != 0 && color != 1 && color != 6 && color != 7) break;
+        }
+        sound(NOTE_D6,500);
+        leftWheel.reset();
+        rightWheel.reset();
+        while(1){
+            if(leftWheel.getCount() >= forward_angle && rightWheel.getCount() >= forward_angle) break;
+            leftWheel.setPWM(speed);
+            rightWheel.setPWM(speed);
+        }
+        end = searchLine(tiny_speed, tiny_angle);
+        while(end){
+            leftWheel.reset();
+            rightWheel.reset();
+            while (1) {
+                if(leftWheel.getCount() >= angle || rightWheel.getCount() <= (-1 * angle)) break;
+                leftWheel.setPWM(speed);
+                rightWheel.setPWM(-1 * speed);
+            }
+            leftWheel.reset();
+            rightWheel.reset();
+            while(1){
+                msg_f("end line", 2);
+                if(leftWheel.getCount() >= forward_angle && rightWheel.getCount() >= forward_angle) break;
+                leftWheel.setPWM(speed);
+                rightWheel.setPWM(speed);
+            }
+            sound(NOTE_D6,500);
+            goEndPoint();
+        }
+    }
 }
