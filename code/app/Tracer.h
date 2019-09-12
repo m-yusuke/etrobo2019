@@ -22,6 +22,7 @@ public:
   void move(int speed, char direction);
   void pause();
   bool searchLine(int tiny_speed, int tiny_angle);
+  char whatColor(int colorNum);
   void goEndPoint();
 
   bool lr = false;
@@ -42,6 +43,7 @@ private:
   Steering steering;
   //const int8_t pwm = 16;
   const int8_t pwm = 15;
+  const uint32_t duration = 4;
 
 
   /* キャリブレーションで使用する変数たち */

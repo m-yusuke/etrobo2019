@@ -1,4 +1,5 @@
 #include "Tracer.h"
+#include <string.h> 
 
 
 Tracer::Tracer():
@@ -247,6 +248,7 @@ bool Tracer::searchLine(int tiny_speed, int tiny_angle){
       while(1) {
           color = colorSensor.getColorNumber();
           if(color == 0 || color == 1) isEnd = false;
+          clock.sleep(duration);
           if(leftWheel.getCount() <= (-1 * tiny_angle / 2) && rightWheel.getCount() >= tiny_angle / 2) break;
           leftWheel.setPWM(-1 * tiny_speed);
           rightWheel.setPWM(tiny_speed);
@@ -256,6 +258,7 @@ bool Tracer::searchLine(int tiny_speed, int tiny_angle){
       while(1) {
           color = colorSensor.getColorNumber();
           if(color == 0 || color == 1) isEnd = false;
+          clock.sleep(duration);
           if(leftWheel.getCount() >= tiny_angle && rightWheel.getCount() <= (-1 * tiny_angle)) break;
           leftWheel.setPWM(tiny_speed);
           rightWheel.setPWM(-1 * tiny_speed);
@@ -265,12 +268,47 @@ bool Tracer::searchLine(int tiny_speed, int tiny_angle){
       while(1) {
           color = colorSensor.getColorNumber();
           if(color == 0 || color == 1) isEnd = false;
+          clock.sleep(duration);
           if(leftWheel.getCount() <= (-1 * tiny_angle / 2) && rightWheel.getCount() >= tiny_angle / 2) break;
           leftWheel.setPWM(-1 * tiny_speed);
           rightWheel.setPWM(tiny_speed);
       }
       if (isEnd) sound(NOTE_D6,500);
       return isEnd;
+}
+
+char Tracer::whatColor(int colorNum){
+  char color;
+  switch (colorNum) {
+    case 0:
+        color = 'v';
+        break;
+    case 1:
+        color = 'v';
+        break;
+    case 2:
+        color = 'b';
+        break;
+    case 3:
+        color = 'g';
+        break;
+    case 4:
+        color = 'y';
+        break;
+    case 5:
+        color = 'r';
+        break;
+    case 6:
+        color = 'w';
+        break;
+    case 7:
+        color = 'w';
+        break;
+    default:
+        color = 'e';
+        break;
+  }
+  return color;
 }
 
 /****************************
@@ -286,6 +324,10 @@ void Tracer::goEndPoint() {
     int32_t forward_angle = 110;
     bool end = true;
     int color = 0;
+    char color_char = 'e';
+    char chars[100] = "";
+    char oldChars[100] = "";
+    FILE *file;
     while(1){
         end = true;
         leftWheel.reset();
@@ -293,7 +335,13 @@ void Tracer::goEndPoint() {
         while(1) {
             run();
             color = colorSensor.getColorNumber();
-            if(color != 0 && color != 1 && color != 6 && color != 7) break;
+            if(color != 0 && color != 1 && color != 6 && color != 7){ 
+                color_char = whatColor(color);
+                sprintf(chars, "%s%c", oldChars, color_char);
+                sprintf(oldChars, "%s", chars);
+                break;
+            }
+            clock.sleep(duration);
         }
         sound(NOTE_D6,500);
         leftWheel.reset();
@@ -307,20 +355,26 @@ void Tracer::goEndPoint() {
         while(end){
             leftWheel.reset();
             rightWheel.reset();
+            angle = 137;
             while (1) {
-                if(leftWheel.getCount() >= angle || rightWheel.getCount() <= (-1 * angle)) break;
-                leftWheel.setPWM(speed);
-                rightWheel.setPWM(-1 * speed);
+              if (strcmp(chars, "gyy") != 0) speed = 0;
+                if(leftWheel.getCount() <= (-1 * angle) || rightWheel.getCount() >= (1 * angle)) break;
+                leftWheel.setPWM(-1 * speed);
+                rightWheel.setPWM(speed);
             }
             leftWheel.reset();
             rightWheel.reset();
             while(1){
                 msg_f("end line", 2);
-                if(leftWheel.getCount() >= forward_angle && rightWheel.getCount() >= forward_angle) break;
+                if(leftWheel.getCount() >= tiny_angle && rightWheel.getCount() >= tiny_angle) break;
                 leftWheel.setPWM(speed);
                 rightWheel.setPWM(speed);
             }
             sound(NOTE_D6,500);
+            file = fopen("/log.txt","a");
+            fprintf(file , "%s\n" , chars);
+            fclose(file);
+            clock.sleep(duration);
             goEndPoint();
         }
     }
